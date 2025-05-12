@@ -1,0 +1,123 @@
+
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Nachhaltige Unternehmen</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f0e9b6;
+      margin: 0;
+      padding: 20px;
+    }
+    h1 {
+      color: #b61818;
+      font-size: 24px;
+    }
+    h2 {
+      color: #8fa942;
+      font-size: 18px;
+      margin-bottom: 20px;
+    }
+    input[type="text"] {
+      width: 100%;
+      padding: 10px;
+      margin-bottom: 20px;
+      font-size: 16px;
+      border: 2px solid #2a7cab;
+      border-radius: 5px;
+      box-sizing: border-box;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      background: #fff;
+    }
+    th, td {
+      padding: 10px;
+      border: 1px solid #2a7cab;
+      text-align: left;
+    }
+    th {
+      background-color: #2a7cab;
+      color: #fff;
+    }
+    a {
+      color: #2a7cab;
+      text-decoration: none;
+    }
+    a:hover {
+      text-decoration: underline;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>Nachhaltige Unternehmen in Deutschland</h1>
+  <h2>Suche direkt in der GitHub-CSV-Datei</h2>
+
+  <input type="text" id="search" placeholder="Suche nach Name, Branche oder Kategorie..." />
+
+  <table id="results">
+    <thead>
+      <tr>
+        <th>Unternehmen</th>
+        <th>Branche</th>
+        <th>Kurzbeschreibung</th>
+        <th>Website</th>
+        <th>Kategorie</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+
+  <script>
+    async function loadCSV() {
+      const response = await fetch("unternehmen.csv");
+      const text = await response.text();
+      const lines = text.trim().split("\n").slice(1); // skip header
+      return lines.map(line => line.split(","));
+    }
+
+    function renderTable(data) {
+      const tbody = document.querySelector("#results tbody");
+      tbody.innerHTML = "";
+      data.forEach(row => {
+        const tr = document.createElement("tr");
+        row.forEach((cell, i) => {
+          const td = document.createElement("td");
+          if (i === 3) {
+            const a = document.createElement("a");
+            a.href = cell;
+            a.target = "_blank";
+            a.textContent = "Website";
+            td.appendChild(a);
+          } else {
+            td.textContent = cell;
+          }
+          tr.appendChild(td);
+        });
+        tbody.appendChild(tr);
+      });
+    }
+
+    async function setup() {
+      const data = await loadCSV();
+      renderTable(data);
+
+      const input = document.getElementById("search");
+      input.addEventListener("input", () => {
+        const query = input.value.toLowerCase();
+        const filtered = data.filter(row =>
+          row.some(cell => cell.toLowerCase().includes(query))
+        );
+        renderTable(filtered);
+      });
+    }
+
+    setup();
+  </script>
+</body>
+</html>
