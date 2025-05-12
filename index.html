@@ -21,14 +21,28 @@
       font-size: 18px;
       margin-bottom: 20px;
     }
-    input[type="text"] {
+    #search {
       width: 100%;
       padding: 10px;
-      margin-bottom: 20px;
+      margin-bottom: 5px;
       font-size: 16px;
       border: 2px solid #2a7cab;
       border-radius: 5px;
       box-sizing: border-box;
+    }
+    #suggestions {
+      background: white;
+      border: 1px solid #2a7cab;
+      max-height: 150px;
+      overflow-y: auto;
+      margin-bottom: 15px;
+    }
+    #suggestions div {
+      padding: 8px;
+      cursor: pointer;
+    }
+    #suggestions div:hover {
+      background-color: #e0f0ff;
     }
     table {
       width: 100%;
@@ -56,9 +70,10 @@
 <body>
 
   <h1>Nachhaltige Unternehmen in Deutschland</h1>
-  <h2>Suche direkt in der GitHub-CSV-Datei</h2>
+  <h2>Suche direkt in der CSV-Datei mit Vorschlägen</h2>
 
-  <input type="text" id="search" placeholder="Suche nach Name, Branche oder Kategorie..." />
+  <input type="text" id="search" placeholder="Suche nach Name, Branche oder Kategorie..." autocomplete="off" />
+  <div id="suggestions"></div>
 
   <table id="results">
     <thead>
@@ -74,10 +89,12 @@
   </table>
 
   <script>
+    let fullData = [];
+
     async function loadCSV() {
       const response = await fetch("unternehmen.csv");
       const text = await response.text();
-      const lines = text.trim().split("\n").slice(1); // skip header
+      const lines = text.trim().split("\n").slice(1);
       return lines.map(line => line.split(","));
     }
 
@@ -103,17 +120,48 @@
       });
     }
 
+    function updateSuggestions(query) {
+      const suggestionBox = document.getElementById("suggestions");
+      suggestionBox.innerHTML = "";
+      if (!query) return;
+
+      const suggestions = new Set();
+      fullData.forEach(row => {
+        row.forEach(cell => {
+          if (cell.toLowerCase().includes(query.toLowerCase())) {
+            suggestions.add(cell.trim());
+          }
+        });
+      });
+
+      Array.from(suggestions).slice(0, 10).forEach(text => {
+        const div = document.createElement("div");
+        div.textContent = text;
+        div.onclick = () => {
+          document.getElementById("search").value = text;
+          suggestionBox.innerHTML = "";
+          filterTable(text);
+        };
+        suggestionBox.appendChild(div);
+      });
+    }
+
+    function filterTable(query) {
+      const filtered = fullData.filter(row =>
+        row.some(cell => cell.toLowerCase().includes(query.toLowerCase()))
+      );
+      renderTable(filtered);
+    }
+
     async function setup() {
-      const data = await loadCSV();
-      renderTable(data);
+      fullData = await loadCSV();
+      renderTable(fullData);
 
       const input = document.getElementById("search");
       input.addEventListener("input", () => {
-        const query = input.value.toLowerCase();
-        const filtered = data.filter(row =>
-          row.some(cell => cell.toLowerCase().includes(query))
-        );
-        renderTable(filtered);
+        const value = input.value.trim();
+        updateSuggestions(value);
+        filterTable(value);
       });
     }
 
